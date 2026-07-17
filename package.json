@@ -1,44 +1,27 @@
 {
-  "name": "github-search",
-  "version": "0.0.0",
+  "name": "github-gateway",
+  "version": "1.0.0",
+  "description": "A single-page application which allows users to search for a GitHub profile by username.",
+  "main": "github-gateway/src/server.ts",
   "scripts": {
-    "ng": "ng",
-    "start": "ng serve",
-    "dev": "ng serve",
-    "build": "ng build",
-    "watch": "ng build --watch --configuration development",
-    "test": "ng test",
-    "test:frontend": "ng test --watch=false",
-    "test:backend": "vitest run src/server/tests",
-    "test:backend:watch": "vitest src/server/tests",
-    "serve:ssr:github-search": "node dist/github-search/server/server.mjs",
-    "start:prod": "node dist/github-search/server/server.mjs"
+    "dev": "npm run dev --prefix github-gateway",
+    "build": "npm run build --prefix github-gateway",
+    "start:prod": "npm run start:prod --prefix github-gateway",
+    "test": "npm run test:backend --prefix github-gateway && npm run test:frontend --prefix github-gateway",
+    "test:backend": "npm run test:backend --prefix github-gateway",
+    "test:frontend": "npm run test:frontend --prefix github-gateway"
   },
-  "private": true,
-  "packageManager": "npm@11.16.0",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
   "dependencies": {
-    "@angular/common": "^22.0.0",
-    "@angular/compiler": "^22.0.0",
-    "@angular/core": "^22.0.0",
-    "@angular/forms": "^22.0.0",
-    "@angular/platform-browser": "^22.0.0",
-    "@angular/platform-server": "^22.0.0",
-    "@angular/router": "^22.0.0",
-    "@angular/ssr": "^22.0.7",
-    "dotenv": "^17.2.2",
-    "express": "^5.1.0",
-    "rxjs": "~7.8.0",
-    "tslib": "^2.3.0"
+    "bootstrap": "^5.3.8",
+    "express": "^5.2.1",
+    "mongodb": "^7.5.0",
+    "mongoose": "^9.7.4"
   },
   "devDependencies": {
-    "@angular/build": "^22.0.7",
-    "@angular/cli": "^22.0.7",
-    "@angular/compiler-cli": "^22.0.0",
-    "@types/express": "^5.0.1",
-    "@types/node": "^20.17.19",
-    "jsdom": "^28.0.0",
-    "prettier": "^3.8.1",
-    "typescript": "~6.0.2",
-    "vitest": "^4.0.8"
+    "vitest": "^4.1.10"
   }
 }
