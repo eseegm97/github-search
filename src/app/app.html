@@ -1,1 +1,15 @@
-<router-outlet />
+<div class="app-shell">
+	<header class="top-nav">
+		<a class="brand" routerLink="/search">GitHub Gateway</a>
+
+		<nav class="nav-links" aria-label="Primary">
+			<a routerLink="/search" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Search</a>
+			<a routerLink="/favorites" routerLinkActive="active">Favorites</a>
+			<a routerLink="/history" routerLinkActive="active">History</a>
+		</nav>
+	</header>
+
+	<main class="page-content">
+		<router-outlet />
+	</main>
+</div>
