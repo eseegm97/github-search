@@ -53,7 +53,6 @@ favoritesRouter.post('/', async (req, res, next) => {
       avatarUrl,
       profileUrl,
       note: payload.note ?? '',
-      tags: payload.tags ?? [],
     });
 
     sendData(res, created.toJSON(), 201);
@@ -74,18 +73,14 @@ favoritesRouter.put('/:id', async (req, res, next) => {
 
     await connectDatabase();
     const filter = buildFavoriteLookup(id);
-    const updates: { note?: string; tags?: string[] } = {};
+    const updates: { note?: string } = {};
 
     if (payload.note !== undefined) {
       updates.note = payload.note;
     }
 
-    if (payload.tags !== undefined) {
-      updates.tags = payload.tags;
-    }
-
-    if (payload.note === undefined && payload.tags === undefined) {
-      throw new RouteError(400, 'BAD_REQUEST', 'Provide note and/or tags to update.');
+    if (payload.note === undefined) {
+      throw new RouteError(400, 'BAD_REQUEST', 'Provide note to update.');
     }
 
     const updated = await FavoriteProfileModel.findOneAndUpdate(filter, updates, {

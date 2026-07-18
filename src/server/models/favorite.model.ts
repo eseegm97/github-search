@@ -7,7 +7,6 @@ const favoriteProfileSchema = new mongoose.Schema(
     avatarUrl: { type: String, required: true },
     profileUrl: { type: String, required: true },
     note: { type: String, default: '' },
-    tags: { type: [String], default: [] },
   },
   {
     timestamps: true,
@@ -35,12 +34,10 @@ export type CreateFavoritePayload = {
   avatarUrl: string;
   profileUrl: string;
   note?: string;
-  tags?: string[];
 };
 
 export type UpdateFavoritePayload = {
   note?: string;
-  tags?: string[];
 };
 
 export const FavoriteProfileModel =

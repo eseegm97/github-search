@@ -10,7 +10,6 @@ type ApiEnvelope<T> = {
 
 type UpdateFavoritePayload = {
   note?: string;
-  tags?: string[];
 };
 
 @Injectable({ providedIn: 'root' })
@@ -30,7 +29,7 @@ export class FavoritesService {
     return this.favoritesState().find((item) => item.login.toLowerCase() === lowered);
   }
 
-  async addFromProfile(profile: GithubProfile, note: string, tags: string[]): Promise<Favorite> {
+  async addFromProfile(profile: GithubProfile, note: string): Promise<Favorite> {
     const response = await firstValueFrom(
       this.http.post<ApiEnvelope<Favorite>>('/api/favorites', {
         githubId: profile.githubId,
@@ -38,7 +37,6 @@ export class FavoritesService {
         avatarUrl: profile.avatarUrl,
         profileUrl: profile.profileUrl,
         note,
-        tags,
       }),
     );
 

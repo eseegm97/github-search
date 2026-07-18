@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs/operators';
 import { GithubProfile } from '../models/github-user.model';
@@ -12,75 +12,60 @@ import { HistoryService } from '../services/history.service';
 @Component({
   selector: 'app-profile-detail-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule],
   template: `
-    <main class="page">
+    <main class="page-shell">
       @if (loading()) {
-        <p>Loading profile...</p>
+        <div class="alert alert-info py-2">Loading profile...</div>
       }
 
       @if (error()) {
-        <p class="error">{{ error() }}</p>
+        <div class="alert alert-danger py-2">{{ error() }}</div>
       }
 
       @if (profile(); as user) {
-        <div class="header">
-          <img [src]="user.avatarUrl" [alt]="user.username + ' avatar'" />
-          <div>
-            <h1>{{ user.name || user.username }}</h1>
-            <p class="muted">@{{ user.username }}</p>
-            @if (user.bio) {
-              <p>{{ user.bio }}</p>
-            }
+        <section class="section-card p-3 p-md-4 mb-4">
+          <div class="header">
+            <img [src]="user.avatarUrl" [alt]="user.username + ' avatar'" />
+            <div>
+              <h1 class="h2 fw-bold mb-1">{{ user.name || user.username }}</h1>
+              <p class="muted mb-2">@{{ user.username }}</p>
+            </div>
           </div>
-        </div>
 
-        <div class="stats">
-          <span>Repos: {{ user.publicRepos }}</span>
-          <span>Followers: {{ user.followers }}</span>
-          <span>Following: {{ user.following }}</span>
-        </div>
-
-        <section class="panel">
-          <h2>Save to Favorites</h2>
-
-          @if (existingFavoriteId()) {
-            <p class="muted">Already in favorites. Saving will update the note/tags.</p>
+          @if (user.bio) {
+            <p class="bio mt-3 mb-3">{{ user.bio }}</p>
           }
 
-          <label>
-            Note
-            <textarea [(ngModel)]="note" rows="3"></textarea>
-          </label>
+          <div class="stats">
+            <span class="chip">Repos: {{ user.publicRepos }}</span>
+            <span class="chip">Followers: {{ user.followers }}</span>
+            <span class="chip">Following: {{ user.following }}</span>
+          </div>
+        </section>
 
-          <label>
-            Tags (comma-separated)
-            <input [(ngModel)]="tagsText" />
-          </label>
+        <section class="section-card p-3 p-md-4">
+          <h2 class="h4 fw-semibold mb-3">Save to Favorites</h2>
 
-          <div class="actions">
-            <button (click)="saveFavorite()" [disabled]="saving()">
+          @if (existingFavoriteId()) {
+            <p class="text-secondary small mb-3">Already in favorites. Saving will update the note.</p>
+          }
+
+          <label for="favorite-note" class="form-label fw-semibold">Note</label>
+          <textarea id="favorite-note" class="form-control" [(ngModel)]="note" rows="3"></textarea>
+
+          <div class="actions mt-3">
+            <button class="btn btn-primary" (click)="saveFavorite()" [disabled]="saving()">
               {{ saving() ? 'Saving...' : 'Save Favorite' }}
             </button>
-            <a [href]="user.profileUrl" target="_blank" rel="noopener">Open on GitHub</a>
+            <a class="btn btn-outline-dark" [href]="user.profileUrl" target="_blank" rel="noopener">Open on GitHub</a>
           </div>
         </section>
       }
-
-      <div class="footer-links">
-        <a routerLink="/search">Back to Search</a>
-        <a routerLink="/favorites">Go to Favorites</a>
-      </div>
     </main>
   `,
   styles: [
     `
-      .page {
-        max-width: 960px;
-        margin: 0 auto;
-        padding: 2rem 1rem;
-      }
-
       .header {
         display: flex;
         gap: 1rem;
@@ -95,43 +80,33 @@ import { HistoryService } from '../services/history.service';
 
       .stats {
         display: flex;
+        flex-wrap: wrap;
         gap: 1rem;
-        margin: 1rem 0;
       }
 
-      .panel {
-        border: 1px solid #d2d5dc;
-        border-radius: 8px;
-        padding: 1rem;
-        display: grid;
-        gap: 0.6rem;
+      .chip {
+        border: 1px solid #cae0ff;
+        background: #eef5ff;
+        color: #17407f;
+        border-radius: 999px;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.9rem;
+        font-weight: 600;
       }
 
-      textarea,
-      input {
-        width: 100%;
-        margin-top: 0.25rem;
-        padding: 0.45rem;
+      .bio {
+        color: #3f4d69;
       }
 
       .actions {
         display: flex;
+        flex-wrap: wrap;
         gap: 0.7rem;
         align-items: center;
       }
 
-      .footer-links {
-        margin-top: 1rem;
-        display: flex;
-        gap: 1rem;
-      }
-
       .muted {
         color: #5a6170;
-      }
-
-      .error {
-        color: #a02020;
       }
     `,
   ],
@@ -150,7 +125,6 @@ export class ProfileDetailPageComponent {
   readonly existingFavoriteId = signal<string | null>(null);
 
   note = '';
-  tagsText = '';
 
   constructor() {
     this.route.paramMap
@@ -176,7 +150,6 @@ export class ProfileDetailPageComponent {
       const existing = this.favoritesService.getByLogin(profile.username);
       this.existingFavoriteId.set(existing?.id ?? null);
       this.note = existing?.note ?? '';
-      this.tagsText = existing?.tags.join(', ') ?? '';
 
       const query = this.route.snapshot.queryParamMap.get('q')?.trim() || profile.username;
       await this.historyService.addEntry({
@@ -202,17 +175,15 @@ export class ProfileDetailPageComponent {
     this.error.set(null);
 
     try {
-      const tags = parseTags(this.tagsText);
       const existingId = this.existingFavoriteId();
 
       if (existingId) {
         const updated = await this.favoritesService.updateFavorite(existingId, {
           note: this.note,
-          tags,
         });
         this.existingFavoriteId.set(updated.id);
       } else {
-        const created = await this.favoritesService.addFromProfile(profile, this.note, tags);
+        const created = await this.favoritesService.addFromProfile(profile, this.note);
         this.existingFavoriteId.set(created.id);
       }
     } catch {
@@ -221,15 +192,4 @@ export class ProfileDetailPageComponent {
       this.saving.set(false);
     }
   }
-}
-
-function parseTags(raw: string): string[] {
-  return Array.from(
-    new Set(
-      raw
-        .split(',')
-        .map((tag) => tag.trim())
-        .filter((tag) => tag.length > 0),
-    ),
-  );
 }

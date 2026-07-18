@@ -7,7 +7,6 @@ import { FavoritesService } from '../services/favorites.service';
 
 type FavoriteDraft = {
   note: string;
-  tagsText: string;
 };
 
 @Component({
@@ -15,82 +14,62 @@ type FavoriteDraft = {
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
-    <main class="page">
-      <h1>Favorites</h1>
-      <p>Manage saved profiles, update notes/tags, or remove favorites.</p>
+    <main class="page-shell">
+      <section class="mb-4">
+        <h1 class="h2 fw-bold mb-2">Favorites</h1>
+        <p class="text-secondary mb-0">Manage saved profiles, update notes, or remove favorites.</p>
+      </section>
 
       @if (loading()) {
-        <p>Loading favorites...</p>
+        <div class="alert alert-info py-2">Loading favorites...</div>
       }
 
       @if (error()) {
-        <p class="error">{{ error() }}</p>
+        <div class="alert alert-danger py-2">{{ error() }}</div>
       }
 
       @if (!loading() && favorites().length === 0) {
-        <p>No favorites saved yet.</p>
+        <div class="section-card p-4 text-secondary">No favorites saved yet.</div>
       }
 
-      <ul class="favorite-list">
+      <ul class="favorite-list list-unstyled mb-0">
         @for (favorite of favorites(); track favorite.id) {
-          <li>
-            <img [src]="favorite.avatarUrl" [alt]="favorite.login + ' avatar'" loading="lazy" />
-            <div class="content">
-              <div class="top-row">
-                <strong>{{ favorite.login }}</strong>
-                <a [routerLink]="['/profile', favorite.login]">Open</a>
-              </div>
+          <li class="section-card p-3 p-md-4 mb-3">
+            <div class="d-flex gap-3 align-items-start">
+              <img class="avatar" [src]="favorite.avatarUrl" [alt]="favorite.login + ' avatar'" loading="lazy" />
+              <div class="content">
+                <div class="top-row mb-2">
+                  <strong class="fs-5">{{ favorite.login }}</strong>
+                  <a class="btn btn-outline-primary btn-sm" [routerLink]="['/profile', favorite.login]">Open</a>
+                </div>
 
-              <label>
-                Note
+                <label class="form-label fw-semibold mb-1">
+                  Note
+                </label>
                 <textarea
+                  class="form-control"
                   [(ngModel)]="draftFor(favorite.id).note"
                   rows="2"
                 ></textarea>
-              </label>
 
-              <label>
-                Tags (comma-separated)
-                <input [(ngModel)]="draftFor(favorite.id).tagsText" />
-              </label>
-
-              <div class="actions">
-                <button (click)="saveFavorite(favorite)">Save</button>
-                <button class="danger" (click)="removeFavorite(favorite)">Remove</button>
+                <div class="actions mt-3">
+                  <button class="btn btn-primary" (click)="saveFavorite(favorite)">Save</button>
+                  <button class="btn btn-outline-danger" (click)="removeFavorite(favorite)">Remove</button>
+                </div>
               </div>
             </div>
           </li>
         }
       </ul>
-
-      <a routerLink="/search">Back to Search</a>
     </main>
   `,
   styles: [
     `
-      .page {
-        max-width: 960px;
-        margin: 0 auto;
-        padding: 2rem 1rem;
-      }
-
       .favorite-list {
-        list-style: none;
-        margin: 1rem 0;
-        padding: 0;
-        display: grid;
-        gap: 0.75rem;
+        margin-top: 1rem;
       }
 
-      .favorite-list li {
-        display: flex;
-        gap: 0.8rem;
-        border: 1px solid #e3e6ee;
-        border-radius: 8px;
-        padding: 0.8rem;
-      }
-
-      img {
+      .avatar {
         width: 56px;
         height: 56px;
         border-radius: 50%;
@@ -105,32 +84,12 @@ type FavoriteDraft = {
       .top-row {
         display: flex;
         justify-content: space-between;
-      }
-
-      textarea,
-      input {
-        width: 100%;
-        margin-top: 0.25rem;
-        padding: 0.45rem;
+        align-items: center;
       }
 
       .actions {
         display: flex;
         gap: 0.5rem;
-      }
-
-      button {
-        padding: 0.45rem 0.9rem;
-      }
-
-      .danger {
-        background: #fff0f0;
-        border: 1px solid #cc4a4a;
-        color: #962626;
-      }
-
-      .error {
-        color: #a02020;
       }
     `,
   ],
@@ -167,7 +126,6 @@ export class FavoritesPageComponent {
     for (const favorite of this.favorites()) {
       nextDrafts[favorite.id] = {
         note: favorite.note,
-        tagsText: favorite.tags.join(', '),
       };
     }
 
@@ -180,7 +138,6 @@ export class FavoritesPageComponent {
     try {
       await this.favoritesService.updateFavorite(favorite.id, {
         note: draft.note,
-        tags: parseTags(draft.tagsText),
       });
       this.syncDrafts();
     } catch {
@@ -204,19 +161,8 @@ export class FavoritesPageComponent {
       return existing;
     }
 
-    const next = { ...this.drafts(), [id]: { note: '', tagsText: '' } };
+    const next = { ...this.drafts(), [id]: { note: '' } };
     this.drafts.set(next);
     return next[id];
   }
-}
-
-function parseTags(raw: string): string[] {
-  return Array.from(
-    new Set(
-      raw
-        .split(',')
-        .map((tag) => tag.trim())
-        .filter((tag) => tag.length > 0),
-    ),
-  );
 }

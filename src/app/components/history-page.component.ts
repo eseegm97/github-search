@@ -8,72 +8,60 @@ import { HistoryService } from '../services/history.service';
   standalone: true,
   imports: [CommonModule, RouterLink],
   template: `
-    <main class="page">
-      <h1>History</h1>
-      <p>Recent searches and viewed profiles are retained until you clear them.</p>
-
-      <div class="toolbar">
-        <button (click)="clearHistory()" [disabled]="loading() || entries().length === 0">Clear History</button>
-      </div>
+    <main class="page-shell">
+      <section class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-4">
+        <div>
+          <h1 class="h2 fw-bold mb-1">History</h1>
+          <p class="text-secondary mb-0">Recent searches and viewed profiles are retained until you clear them.</p>
+        </div>
+        <button
+          class="btn btn-outline-secondary"
+          (click)="clearHistory()"
+          [disabled]="loading() || entries().length === 0"
+        >
+          Clear History
+        </button>
+      </section>
 
       @if (loading()) {
-        <p>Loading history...</p>
+        <div class="alert alert-info py-2">Loading history...</div>
       }
 
       @if (error()) {
-        <p class="error">{{ error() }}</p>
+        <div class="alert alert-danger py-2">{{ error() }}</div>
       }
 
       @if (!loading() && entries().length === 0) {
-        <p>No history records yet.</p>
+        <div class="section-card p-4 text-secondary">No history records yet.</div>
       }
 
-      <ul class="history-list">
+      <ul class="history-list list-unstyled mb-0">
         @for (entry of entries(); track entry.id) {
-          <li>
+          <li class="section-card p-3 p-md-4 mb-3">
             <div>
-              <strong>{{ entry.query }}</strong>
+              <strong class="fs-5">{{ entry.query }}</strong>
               <div class="meta">{{ entry.createdAt | date: 'medium' }}</div>
             </div>
 
             @if (entry.selectedLogin) {
-              <a [routerLink]="['/profile', entry.selectedLogin]" [queryParams]="{ q: entry.query }">
+              <a class="btn btn-outline-primary btn-sm" [routerLink]="['/profile', entry.selectedLogin]" [queryParams]="{ q: entry.query }">
                 Open {{ entry.selectedLogin }}
               </a>
             } @else {
-              <a [routerLink]="['/search']" [queryParams]="{ q: entry.query }">Run Search</a>
+              <a class="btn btn-outline-primary btn-sm" [routerLink]="['/search']" [queryParams]="{ q: entry.query }">Run Search</a>
             }
           </li>
         }
       </ul>
-
-      <a routerLink="/search">Back to Search</a>
     </main>
   `,
   styles: [
     `
-      .page {
-        max-width: 960px;
-        margin: 0 auto;
-        padding: 2rem 1rem;
-      }
-
-      .toolbar {
-        margin: 1rem 0;
-      }
-
       .history-list {
-        list-style: none;
-        margin: 1rem 0;
-        padding: 0;
-        display: grid;
-        gap: 0.7rem;
+        margin-top: 1rem;
       }
 
       .history-list li {
-        border: 1px solid #e3e6ee;
-        border-radius: 8px;
-        padding: 0.7rem;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -83,10 +71,6 @@ import { HistoryService } from '../services/history.service';
       .meta {
         color: #5d6574;
         font-size: 0.88rem;
-      }
-
-      .error {
-        color: #a02020;
       }
     `,
   ],

@@ -1,12 +1,21 @@
 <div class="app-shell">
-	<header class="top-nav">
-		<a class="brand" routerLink="/search">GitHub Gateway</a>
+	<header class="top-nav navbar navbar-expand-lg sticky-top">
+		<div class="container-fluid nav-container">
+			<a class="navbar-brand brand" routerLink="/search">GitHub Gateway</a>
 
-		<nav class="nav-links" aria-label="Primary">
-			<a routerLink="/search" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Search</a>
-			<a routerLink="/favorites" routerLinkActive="active">Favorites</a>
-			<a routerLink="/history" routerLinkActive="active">History</a>
-		</nav>
+			<nav class="navbar-nav nav-links" aria-label="Primary">
+				<a
+					class="nav-link"
+					routerLink="/search"
+					routerLinkActive="active"
+					[routerLinkActiveOptions]="{ exact: true }"
+				>
+					Search
+				</a>
+				<a class="nav-link" routerLink="/favorites" routerLinkActive="active">Favorites</a>
+				<a class="nav-link" routerLink="/history" routerLinkActive="active">History</a>
+			</nav>
+		</div>
 	</header>
 
 	<main class="page-content">

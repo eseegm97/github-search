@@ -1,1 +1,45 @@
-/* You can add global styles to this file, and also import other style files */
+@import 'bootstrap/dist/css/bootstrap.min.css';
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+:root {
+	--gg-ink: #1f2a44;
+	--gg-brand: #0d6efd;
+	--gg-accent: #00b894;
+	--gg-soft: #eff5ff;
+}
+
+html,
+body {
+	height: 100%;
+}
+
+body {
+	margin: 0;
+	font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+	color: var(--gg-ink);
+	background:
+		radial-gradient(circle at 0% 0%, #d9e9ff 0%, transparent 45%),
+		radial-gradient(circle at 100% 0%, #d8fff2 0%, transparent 35%),
+		linear-gradient(180deg, #f6faff 0%, #ffffff 100%);
+}
+
+a {
+	text-decoration: none;
+}
+
+.page-shell {
+	max-width: 1040px;
+	margin: 0 auto;
+	padding: 2rem 1rem 3rem;
+}
+
+.section-card {
+	background: #ffffff;
+	border: 1px solid #dbe5f5;
+	border-radius: 16px;
+	box-shadow: 0 12px 26px rgba(31, 42, 68, 0.08);
+}
+
+.status-error {
+	color: #b42318;
+}
