@@ -3,7 +3,7 @@
   "version": 1,
   "cli": {
     "packageManager": "npm",
-    "analytics": "5f74000b-1438-4fd2-b624-44a83d27056b",
+    "analytics": "2cdf67dc-59fe-46aa-995c-66866588b4a5"
   },
   "newProjectRoot": "projects",
   "projects": {
@@ -19,6 +19,9 @@
           "options": {
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
+            "polyfills": [
+              "zone.js"
+            ],
             "assets": [
               {
                 "glob": "**/*",
@@ -64,6 +67,49 @@
           },
           "defaultConfiguration": "production"
         },
+        "build-client": {
+          "builder": "@angular/build:application",
+          "options": {
+            "browser": "src/main.ts",
+            "tsConfig": "tsconfig.app.json",
+            "polyfills": [
+              "zone.js",
+              "zone.js/testing"
+            ],
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "public"
+              }
+            ],
+            "styles": [
+              "src/styles.css"
+            ]
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "700kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "4kB",
+                  "maximumError": "8kB"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "development"
+        },
         "serve": {
           "builder": "@angular/build:dev-server",
           "configurations": {
@@ -77,7 +123,18 @@
           "defaultConfiguration": "development"
         },
         "test": {
-          "builder": "@angular/build:unit-test"
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "buildTarget": "github-search:build-client:development",
+            "tsConfig": "tsconfig.spec.json",
+            "runner": "vitest",
+            "include": [
+              "src/app/**/*.spec.ts"
+            ],
+            "exclude": [
+              "src/server/**/*.spec.ts"
+            ]
+          }
         }
       }
     }

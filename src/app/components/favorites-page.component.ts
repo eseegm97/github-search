@@ -176,9 +176,7 @@ export class FavoritesPageComponent {
       return existing;
     }
 
-    const next = { ...this.drafts(), [key]: { note: favorite.note ?? '' } };
-    this.drafts.set(next);
-    return next[key];
+    return { note: favorite.note ?? '' };
   }
 
   private favoriteKey(favorite: Favorite): string {
