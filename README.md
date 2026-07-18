@@ -4,31 +4,26 @@ GitHub Gateway is a backend-proxied Angular SPA. The UI runs in Angular while an
 
 ## Workspace Layout
 
-- `github-gateway/` - Angular SSR app plus Express API host.
-- `github-gateway/src/app/components/` - SPA route components.
-- `github-gateway/src/app/models/` - Frontend data models.
-- `github-gateway/src/server/models/` - Server data models.
-- `github-gateway/src/server/routes/` - Server API route handlers.
+- `src/app/components/` - SPA route components.
+- `src/app/models/` - Frontend data models.
+- `src/server/models/` - Server data models.
+- `src/server/routes/` - Server API route handlers.
 
 ## Quick Start
 
-1. Install root dependencies:
+1. Install dependencies:
 
    `npm install`
 
-2. Install app dependencies:
+2. Copy and edit environment values:
 
-   `npm install --prefix github-gateway`
+   `copy .env.example .env`
 
-3. Copy and edit environment values:
-
-   `copy github-gateway\\.env.example github-gateway\\.env`
-
-4. Start development runtime (SSR + API):
+3. Start development runtime (SSR + API):
 
    `npm run dev`
 
-## Scripts (Root)
+## Scripts
 
 - `npm run dev` - Runs Angular dev server with Express integration.
 - `npm run build` - Builds production assets.
@@ -37,7 +32,7 @@ GitHub Gateway is a backend-proxied Angular SPA. The UI runs in Angular while an
 
 ## Environment Contract
 
-Defined in `github-gateway/.env.example`:
+Defined in `.env.example`:
 
 - `PORT` - Express server port.
 - `CORS_ORIGIN` - Allowed browser origin for API calls.
