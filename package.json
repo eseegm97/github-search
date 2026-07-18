@@ -4,12 +4,13 @@
   "description": "A single-page application which allows users to search for a GitHub profile by username.",
   "main": "github-gateway/src/server.ts",
   "scripts": {
-    "dev": "npx ng serve",
-    "build": "npx ng build",
+    "start": "ng serve",
+    "dev": "ng serve",
+    "build": "ng build",
     "start:prod": "node dist/github-search/server/server.mjs",
     "test": "npm run test:backend && npm run test:frontend",
     "test:backend": "vitest run src/server/tests",
-    "test:frontend": "npx ng test --watch=false"
+    "test:frontend": "ng test --watch=false"
   },
   "keywords": [],
   "author": "",

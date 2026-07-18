@@ -19,10 +19,16 @@ copy .env.example .env
 3. Start development runtime:
 
 ```bash
-npm run dev
+ng serve
 ```
 
 The UI runs at `http://localhost:4200` and API routes are under `/api`.
+
+You can also use script aliases:
+
+```bash
+npm start
+```
 
 ## Environment
 
@@ -38,8 +44,8 @@ Set these in `.env`:
 
 ## Scripts
 
-- `npm run dev` - run the app locally
-- `npm run build` - create production build
+- `ng serve` - run the app locally (or `npm start` / `npm run dev`)
+- `ng build` - create production build (or `npm run build`)
 - `npm run start:prod` - start production server
 - `npm run test` - run backend and frontend tests
 
