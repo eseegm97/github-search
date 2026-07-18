@@ -1,13 +1,13 @@
 import { Routes } from '@angular/router';
 import { FavoritesPageComponent } from './components/favorites-page.component';
 import { HistoryPageComponent } from './components/history-page.component';
+import { ProfileDetailPageComponent } from './components/profile-detail-page.component';
 import { SearchPageComponent } from './components/search-page.component';
 
 export const routes: Routes = [
-	{
-		path: '',
-		component: SearchPageComponent,
-	},
+	{ path: '', pathMatch: 'full', redirectTo: 'search' },
+	{ path: 'search', component: SearchPageComponent },
+	{ path: 'profile/:login', component: ProfileDetailPageComponent },
 	{
 		path: 'favorites',
 		component: FavoritesPageComponent,
@@ -18,6 +18,6 @@ export const routes: Routes = [
 	},
 	{
 		path: '**',
-		redirectTo: '',
+		redirectTo: 'search',
 	},
 ];
