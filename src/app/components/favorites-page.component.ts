@@ -48,7 +48,8 @@ type FavoriteDraft = {
                 </label>
                 <textarea
                   class="form-control"
-                  [(ngModel)]="draftFor(favorite.id).note"
+                  [ngModel]="draftFor(favorite).note"
+                  (ngModelChange)="onDraftNoteChange(favorite, $event)"
                   rows="2"
                 ></textarea>
 
@@ -124,7 +125,7 @@ export class FavoritesPageComponent {
     const nextDrafts: Record<string, FavoriteDraft> = {};
 
     for (const favorite of this.favorites()) {
-      nextDrafts[favorite.id] = {
+      nextDrafts[this.favoriteKey(favorite)] = {
         note: favorite.note,
       };
     }
@@ -133,10 +134,10 @@ export class FavoritesPageComponent {
   }
 
   async saveFavorite(favorite: Favorite): Promise<void> {
-    const draft = this.draftFor(favorite.id);
+    const draft = this.draftFor(favorite);
 
     try {
-      await this.favoritesService.updateFavorite(favorite.id, {
+      await this.favoritesService.updateFavorite(this.favoriteKey(favorite), {
         note: draft.note,
       });
       this.syncDrafts();
@@ -154,15 +155,33 @@ export class FavoritesPageComponent {
     }
   }
 
-  draftFor(id: string): FavoriteDraft {
-    const existing = this.drafts()[id];
+  onDraftNoteChange(favorite: Favorite, note: string): void {
+    const key = this.favoriteKey(favorite);
+    const current = this.drafts();
+    const existing = current[key] ?? { note: '' };
+    this.drafts.set({
+      ...current,
+      [key]: {
+        ...existing,
+        note,
+      },
+    });
+  }
+
+  draftFor(favorite: Favorite): FavoriteDraft {
+    const key = this.favoriteKey(favorite);
+    const existing = this.drafts()[key];
 
     if (existing) {
       return existing;
     }
 
-    const next = { ...this.drafts(), [id]: { note: '' } };
+    const next = { ...this.drafts(), [key]: { note: favorite.note ?? '' } };
     this.drafts.set(next);
-    return next[id];
+    return next[key];
+  }
+
+  private favoriteKey(favorite: Favorite): string {
+    return favorite.id || favorite.login;
   }
 }

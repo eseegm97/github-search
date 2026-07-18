@@ -23,8 +23,11 @@ function buildFavoriteLookup(id: string): { $or: Array<Record<string, string>> }
 favoritesRouter.get('/', async (_req, res, next) => {
   try {
     await connectDatabase();
-    const favorites = await FavoriteProfileModel.find({}).sort({ updatedAt: -1 }).lean();
-    sendData(res, favorites);
+    const favorites = await FavoriteProfileModel.find({}).sort({ updatedAt: -1 });
+    sendData(
+      res,
+      favorites.map((favorite) => favorite.toJSON()),
+    );
   } catch (error) {
     next(new RouteError(503, 'DATABASE_FAILURE', 'Unable to list favorites.', { cause: error }));
   }
