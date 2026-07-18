@@ -1,4 +1,5 @@
 export type GithubUser = {
+  githubId: number;
   username: string;
   avatarUrl: string;
   profileUrl: string;

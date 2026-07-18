@@ -1,36 +1,55 @@
 import { Router } from 'express';
-import { HistoryEntry } from '../models/history.model';
-
-const historyEntries: HistoryEntry[] = [];
+import { connectDatabase } from '../database';
+import { CreateSearchHistoryPayload, SearchHistoryModel } from '../models/history.model';
+import { RouteError, sendData } from './responses';
 
 export const historyRouter = Router();
 
-historyRouter.get('/', (_req, res) => {
-  const items = [...historyEntries].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  res.json({ data: items });
-});
-
-historyRouter.post('/', (req, res) => {
-  const query = `${req.body?.query ?? ''}`.trim();
-
-  if (!query) {
-    res.status(400).json({ error: 'query is required.' });
-    return;
+historyRouter.get('/', async (_req, res, next) => {
+  try {
+    await connectDatabase();
+    const entries = await SearchHistoryModel.find({}).sort({ createdAt: -1 }).lean();
+    sendData(res, entries);
+  } catch (error) {
+    next(new RouteError(503, 'DATABASE_FAILURE', 'Unable to list history.', { cause: error }));
   }
-
-  const selectedUsername = `${req.body?.selectedUsername ?? ''}`.trim() || undefined;
-  const entry: HistoryEntry = {
-    id: crypto.randomUUID(),
-    query,
-    selectedUsername,
-    createdAt: new Date().toISOString(),
-  };
-
-  historyEntries.push(entry);
-  res.status(201).json({ data: entry });
 });
 
-historyRouter.delete('/', (_req, res) => {
-  historyEntries.length = 0;
-  res.status(204).send();
+historyRouter.post('/', async (req, res, next) => {
+  try {
+    const payload = req.body as CreateSearchHistoryPayload;
+    const query = `${payload.query ?? ''}`.trim();
+
+    if (!query) {
+      throw new RouteError(400, 'BAD_REQUEST', 'query is required.');
+    }
+
+    const selectedLogin = payload.selectedLogin?.trim().toLowerCase() || undefined;
+    const selectedAt = payload.selectedAt ? new Date(payload.selectedAt) : undefined;
+
+    if (selectedAt && Number.isNaN(selectedAt.getTime())) {
+      throw new RouteError(400, 'BAD_REQUEST', 'selectedAt must be a valid ISO datetime.');
+    }
+
+    await connectDatabase();
+    const created = await SearchHistoryModel.create({
+      query,
+      selectedLogin,
+      selectedAt: selectedAt ?? (selectedLogin ? new Date() : undefined),
+    });
+
+    sendData(res, created.toJSON(), 201);
+  } catch (error) {
+    next(error);
+  }
+});
+
+historyRouter.delete('/', async (_req, res, next) => {
+  try {
+    await connectDatabase();
+    await SearchHistoryModel.deleteMany({});
+    res.status(204).send();
+  } catch (error) {
+    next(new RouteError(503, 'DATABASE_FAILURE', 'Unable to clear history.', { cause: error }));
+  }
 });

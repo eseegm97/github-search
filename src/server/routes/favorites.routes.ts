@@ -1,86 +1,126 @@
 import { Router } from 'express';
-import { FavoriteProfile, UpsertFavoritePayload } from '../models/favorite.model';
-
-const favoritesStore = new Map<string, FavoriteProfile>();
+import mongoose from 'mongoose';
+import { connectDatabase } from '../database';
+import {
+  CreateFavoritePayload,
+  FavoriteProfileModel,
+  UpdateFavoritePayload,
+} from '../models/favorite.model';
+import { RouteError, sendData } from './responses';
 
 export const favoritesRouter = Router();
 
-favoritesRouter.get('/', (_req, res) => {
-  const items = Array.from(favoritesStore.values()).sort((a, b) =>
-    b.updatedAt.localeCompare(a.updatedAt),
-  );
+function buildFavoriteLookup(id: string): { $or: Array<Record<string, string>> } {
+  const candidates: Array<Record<string, string>> = [{ login: id.toLowerCase() }];
 
-  res.json({ data: items });
+  if (mongoose.isValidObjectId(id)) {
+    candidates.unshift({ _id: id });
+  }
+
+  return { $or: candidates };
+}
+
+favoritesRouter.get('/', async (_req, res, next) => {
+  try {
+    await connectDatabase();
+    const favorites = await FavoriteProfileModel.find({}).sort({ updatedAt: -1 }).lean();
+    sendData(res, favorites);
+  } catch (error) {
+    next(new RouteError(503, 'DATABASE_FAILURE', 'Unable to list favorites.', { cause: error }));
+  }
 });
 
-favoritesRouter.post('/', (req, res) => {
-  const payload = req.body as UpsertFavoritePayload;
-  const username = payload.username?.trim();
+favoritesRouter.post('/', async (req, res, next) => {
+  try {
+    const payload = req.body as CreateFavoritePayload;
+    const githubId = Number(payload.githubId);
+    const login = payload.login?.trim().toLowerCase();
+    const avatarUrl = payload.avatarUrl?.trim();
+    const profileUrl = payload.profileUrl?.trim();
 
-  if (!username) {
-    res.status(400).json({ error: 'username is required.' });
-    return;
+    if (!Number.isInteger(githubId) || githubId <= 0 || !login || !avatarUrl || !profileUrl) {
+      throw new RouteError(
+        400,
+        'BAD_REQUEST',
+        'githubId, login, avatarUrl, and profileUrl are required.',
+      );
+    }
+
+    await connectDatabase();
+    const created = await FavoriteProfileModel.create({
+      githubId,
+      login,
+      avatarUrl,
+      profileUrl,
+      note: payload.note ?? '',
+      tags: payload.tags ?? [],
+    });
+
+    sendData(res, created.toJSON(), 201);
+  } catch (error) {
+    next(error);
   }
-
-  const now = new Date().toISOString();
-  const created: FavoriteProfile = {
-    id: username.toLowerCase(),
-    username,
-    notes: payload.notes ?? '',
-    tags: payload.tags ?? [],
-    avatarUrl: payload.avatarUrl,
-    profileUrl: payload.profileUrl,
-    createdAt: now,
-    updatedAt: now,
-  };
-
-  favoritesStore.set(created.id, created);
-  res.status(201).json({ data: created });
 });
 
-favoritesRouter.put('/:id', (req, res) => {
-  const idParam = req.params['id'];
-  const id = (Array.isArray(idParam) ? idParam[0] : idParam)?.toLowerCase();
+favoritesRouter.put('/:id', async (req, res, next) => {
+  try {
+    const idParam = req.params['id'];
+    const id = (Array.isArray(idParam) ? idParam[0] : idParam)?.trim();
+    const payload = req.body as UpdateFavoritePayload;
 
-  if (!id) {
-    res.status(400).json({ error: 'Favorite id is required.' });
-    return;
+    if (!id) {
+      throw new RouteError(400, 'BAD_REQUEST', 'Favorite id is required.');
+    }
+
+    await connectDatabase();
+    const filter = buildFavoriteLookup(id);
+    const updates: { note?: string; tags?: string[] } = {};
+
+    if (payload.note !== undefined) {
+      updates.note = payload.note;
+    }
+
+    if (payload.tags !== undefined) {
+      updates.tags = payload.tags;
+    }
+
+    if (payload.note === undefined && payload.tags === undefined) {
+      throw new RouteError(400, 'BAD_REQUEST', 'Provide note and/or tags to update.');
+    }
+
+    const updated = await FavoriteProfileModel.findOneAndUpdate(filter, updates, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!updated) {
+      throw new RouteError(404, 'NOT_FOUND', 'Favorite was not found.');
+    }
+
+    sendData(res, updated.toJSON());
+  } catch (error) {
+    next(error);
   }
-
-  const current = favoritesStore.get(id);
-  if (!current) {
-    res.status(404).json({ error: 'Favorite was not found.' });
-    return;
-  }
-
-  const payload = req.body as Partial<UpsertFavoritePayload>;
-  const updated: FavoriteProfile = {
-    ...current,
-    notes: payload.notes ?? current.notes,
-    tags: payload.tags ?? current.tags,
-    avatarUrl: payload.avatarUrl ?? current.avatarUrl,
-    profileUrl: payload.profileUrl ?? current.profileUrl,
-    updatedAt: new Date().toISOString(),
-  };
-
-  favoritesStore.set(id, updated);
-  res.json({ data: updated });
 });
 
-favoritesRouter.delete('/:id', (req, res) => {
-  const idParam = req.params['id'];
-  const id = (Array.isArray(idParam) ? idParam[0] : idParam)?.toLowerCase();
+favoritesRouter.delete('/:id', async (req, res, next) => {
+  try {
+    const idParam = req.params['id'];
+    const id = (Array.isArray(idParam) ? idParam[0] : idParam)?.trim();
 
-  if (!id) {
-    res.status(400).json({ error: 'Favorite id is required.' });
-    return;
+    if (!id) {
+      throw new RouteError(400, 'BAD_REQUEST', 'Favorite id is required.');
+    }
+
+    await connectDatabase();
+    const deleted = await FavoriteProfileModel.findOneAndDelete(buildFavoriteLookup(id));
+
+    if (!deleted) {
+      throw new RouteError(404, 'NOT_FOUND', 'Favorite was not found.');
+    }
+
+    res.status(204).send();
+  } catch (error) {
+    next(error);
   }
-
-  const removed = favoritesStore.delete(id);
-  if (!removed) {
-    res.status(404).json({ error: 'Favorite was not found.' });
-    return;
-  }
-
-  res.status(204).send();
 });

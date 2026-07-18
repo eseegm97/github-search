@@ -1,6 +1,7 @@
 export type HistoryEntry = {
   id: string;
   query: string;
-  selectedUsername?: string;
-  createdAt: string;
+  selectedLogin?: string;
+  selectedAt?: string | Date;
+  createdAt: string | Date;
 };

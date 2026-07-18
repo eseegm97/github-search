@@ -1,10 +1,11 @@
 export type Favorite = {
   id: string;
-  username: string;
-  notes: string;
+  githubId: number;
+  login: string;
+  avatarUrl: string;
+  profileUrl: string;
+  note: string;
   tags: string[];
-  avatarUrl?: string;
-  profileUrl?: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: string | Date;
+  updatedAt: string | Date;
 };

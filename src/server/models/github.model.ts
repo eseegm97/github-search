@@ -1,10 +1,12 @@
 export type GithubUserSummary = {
+  githubId: number;
   username: string;
   avatarUrl: string;
   profileUrl: string;
 };
 
 export type GithubUserProfile = {
+  githubId: number;
   username: string;
   name: string | null;
   avatarUrl: string;

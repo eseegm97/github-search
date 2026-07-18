@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import { env } from '../env';
 import { GithubUserProfile, GithubUserSummary } from '../models/github.model';
+import { RouteError, sendData } from './responses';
 
 type GithubSearchResponse = {
   items?: Array<{
+    id: number;
     login: string;
     avatar_url: string;
     html_url: string;
@@ -11,6 +13,7 @@ type GithubSearchResponse = {
 };
 
 type GithubUserResponse = {
+  id: number;
   login: string;
   name: string | null;
   avatar_url: string;
@@ -38,6 +41,31 @@ export function sortExactFirst(users: GithubUserSummary[], query: string): Githu
   });
 }
 
+function toSummary(user: { id: number; login: string; avatar_url: string; html_url: string }): GithubUserSummary {
+  return {
+    githubId: user.id,
+    username: user.login,
+    avatarUrl: user.avatar_url,
+    profileUrl: user.html_url,
+  };
+}
+
+function toProfile(user: GithubUserResponse): GithubUserProfile {
+  return {
+    githubId: user.id,
+    username: user.login,
+    name: user.name,
+    avatarUrl: user.avatar_url,
+    profileUrl: user.html_url,
+    bio: user.bio,
+    company: user.company,
+    location: user.location,
+    publicRepos: user.public_repos,
+    followers: user.followers,
+    following: user.following,
+  };
+}
+
 async function githubRequest<T>(path: string): Promise<T> {
   const headers = new Headers({
     Accept: 'application/vnd.github+json',
@@ -53,10 +81,36 @@ async function githubRequest<T>(path: string): Promise<T> {
 
   if (!response.ok) {
     const body = await response.text();
-    throw new Error(`GitHub API request failed (${response.status}): ${body}`);
+
+    if (response.status === 404) {
+      throw new RouteError(404, 'NOT_FOUND', 'GitHub user was not found.');
+    }
+
+    const remaining = response.headers.get('x-ratelimit-remaining');
+    if (response.status === 403 && remaining === '0') {
+      throw new RouteError(429, 'RATE_LIMITED', 'GitHub API rate limit exceeded.');
+    }
+
+    throw new RouteError(502, 'UPSTREAM_FAILURE', 'GitHub upstream request failed.', {
+      upstreamStatus: response.status,
+      responseBody: body,
+    });
   }
 
   return (await response.json()) as T;
+}
+
+export function mergeExactAndPartialResults(
+  query: string,
+  exactMatch: GithubUserSummary | null,
+  partialMatches: GithubUserSummary[],
+): GithubUserSummary[] {
+  const deduped = partialMatches.filter((item) =>
+    exactMatch ? item.username.toLowerCase() !== exactMatch.username.toLowerCase() : true,
+  );
+
+  const sorted = sortExactFirst(deduped, query);
+  return exactMatch ? [exactMatch, ...sorted] : sorted;
 }
 
 export const githubRouter = Router();
@@ -66,8 +120,18 @@ githubRouter.get('/search', async (req, res, next) => {
     const query = `${req.query['username'] ?? ''}`.trim();
 
     if (!query) {
-      res.json({ data: [] });
+      sendData(res, []);
       return;
+    }
+
+    let exactMatch: GithubUserSummary | null = null;
+    try {
+      const exactProfile = await githubRequest<GithubUserResponse>(`/users/${encodeURIComponent(query)}`);
+      exactMatch = toSummary(exactProfile);
+    } catch (error) {
+      if (!(error instanceof RouteError && error.status === 404)) {
+        throw error;
+      }
     }
 
     const params = new URLSearchParams({
@@ -76,13 +140,8 @@ githubRouter.get('/search', async (req, res, next) => {
     });
     const raw = await githubRequest<GithubSearchResponse>(`/search/users?${params.toString()}`);
 
-    const users: GithubUserSummary[] = (raw.items ?? []).map((item) => ({
-      username: item.login,
-      avatarUrl: item.avatar_url,
-      profileUrl: item.html_url,
-    }));
-
-    res.json({ data: sortExactFirst(users, query) });
+    const users = (raw.items ?? []).map(toSummary);
+    sendData(res, mergeExactAndPartialResults(query, exactMatch, users));
   } catch (error) {
     next(error);
   }
@@ -93,26 +152,12 @@ githubRouter.get('/users/:username', async (req, res, next) => {
     const usernameParam = req.params['username'];
     const username = Array.isArray(usernameParam) ? usernameParam[0] : usernameParam;
 
-    if (!username) {
-      res.status(400).json({ error: 'Username is required.' });
-      return;
+    if (!username?.trim()) {
+      throw new RouteError(400, 'BAD_REQUEST', 'Username is required.');
     }
 
-    const raw = await githubRequest<GithubUserResponse>(`/users/${encodeURIComponent(username)}`);
-    const profile: GithubUserProfile = {
-      username: raw.login,
-      name: raw.name,
-      avatarUrl: raw.avatar_url,
-      profileUrl: raw.html_url,
-      bio: raw.bio,
-      company: raw.company,
-      location: raw.location,
-      publicRepos: raw.public_repos,
-      followers: raw.followers,
-      following: raw.following,
-    };
-
-    res.json({ data: profile });
+    const profile = await githubRequest<GithubUserResponse>(`/users/${encodeURIComponent(username)}`);
+    sendData(res, toProfile(profile));
   } catch (error) {
     next(error);
   }

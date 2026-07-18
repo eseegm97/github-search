@@ -7,8 +7,10 @@ import {
 import 'dotenv/config';
 import express from 'express';
 import { join } from 'node:path';
+import { connectDatabase } from './server/database';
 import { env } from './server/env';
 import { apiRouter } from './server/routes';
+import { sendError } from './server/routes/responses';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
@@ -27,6 +29,12 @@ app.use((req, res, next) => {
 
   next();
 });
+
+app.use((req, _res, next) => {
+  console.log(`[API] ${req.method} ${req.originalUrl}`);
+  next();
+});
+
 app.use(express.json());
 app.use('/api', apiRouter);
 
@@ -54,8 +62,7 @@ app.use((req, res, next) => {
 });
 
 app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  const message = error instanceof Error ? error.message : 'Unexpected server error.';
-  res.status(500).json({ error: message });
+  sendError(res, error);
 });
 
 /**
@@ -63,6 +70,15 @@ app.use((error: unknown, _req: express.Request, res: express.Response, _next: ex
  * The server listens on the port defined by the `PORT` environment variable, or defaults to 4000.
  */
 if (isMainModule(import.meta.url) || process.env['pm_id']) {
+  connectDatabase()
+    .then(() => {
+      console.log('[DB] MongoDB connected.');
+    })
+    .catch((error) => {
+      console.warn('[DB] MongoDB connection failed. API will return database errors until available.');
+      console.warn(error);
+    });
+
   app.listen(env.port, (error) => {
     if (error) {
       throw error;
